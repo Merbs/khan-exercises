@@ -1,4 +1,41 @@
 $.extend(KhanUtil, {
+ 	Monomial: function(coef, degree, variables) {
+		// coef is a number, degree/variables are arrays with the same length
+		
+		degree = (degree instanceof Array) ? degree : [degree];
+		variables = (variables instanceof Array) ? variables : [variables];
+		 		
+		this.expr = function(){
+			if (typeof coef === "undefined" || coef === 0) {
+				return 0;
+			}
+			
+			expr = ["*", coef];
+		
+			for(var v = 0; v < degree.length; v++){
+				if (degree[v] === 1) {
+					expr.push(variables[v]);
+				} else if (degree[v] !== 0) {
+					expr.push(["^", variables[v], degree[v]]);
+				}
+			}
+			
+			return expr;
+		};		
+		
+		this.derivative = function(variable){
+			vi = variables.indexOf(variable);
+			ddxCoef = coef * degree[vi];
+			
+			ddxDegree = degree.slice(0); // Copy array, then change relevant degree
+			ddxDegree[vi] = ddxDegree[vi] !== 0 ? ddxDegree[vi] - 1 : 0; // unless zero
+			
+			return new KhanUtil.Monomial(ddxCoef, ddxDegree, variables); 
+		};
+		
+		return this;
+    },
+    
     Polynomial: function(minDegree, maxDegree, coefs, variable, name) {
         var term = function(coef, vari, degree) {
 
@@ -391,6 +428,42 @@ $.extend(KhanUtil, {
 
         return this;
 
+    },
+    
+        MultivariatePolynomial: function(coefs, degrees, variables){
+    	// all inputs are arrays: coefs and degrees have length = number of terms
+    	// i.e. MultivariatePolynomial([2,-7,9],[[3,0],[5,4],[0,6]],["x","y"])
+    	// would result in 2(x^3) - 7(x^5)(y^4) + 9(y^6)
+    	    	
+        this.expr = function() {
+            var expr = ["+"];
+
+            for (var t = 0; t < coefs.length; t++) {
+	            term = new KhanUtil.Monomial(coefs[t], degrees[t], variables);
+            	expr.push(term.expr());
+            }
+
+            return expr;
+        };
+        
+        this.derivative = function(variable){
+            var derivative = ["+"];
+
+            for (var t = 0; t < coefs.length; t++) {
+	            term = new KhanUtil.Monomial(coefs[t], degrees[t], variables);
+	            deriv = term.derivative(variable);
+	            derivative.push(deriv.expr());
+            }
+            
+            return derivative;
+        }; 
+        
+        this.text = function() {
+            return KhanUtil.expr(this.expr());
+        };
+        
+        return this;
+    
     },
 
     randCoefs: function randCoefs(minDegree, maxDegree) {
