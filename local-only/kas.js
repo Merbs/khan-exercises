@@ -622,93 +622,95 @@ stateStackSize:function stateStackSize() {
 options: {"flex":true},
 performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
 
-var YYSTATE=YY_START;
-switch($avoiding_name_collisions) {
-case 0:/* skip whitespace */
-break;
-case 1:return "INT"
-break;
-case 2:return "FLOAT"
-break;
-case 3:return "^"
-break;
-case 4:return "*"
-break;
-case 5:return "*"
-break;
-case 6:return "*"
-break;
-case 7:return "/"
-break;
-case 8:return "-"
-break;
-case 9:return "+"
-break;
-case 10:return "^"
-break;
-case 11:return "("
-break;
-case 12:return ")"
-break;
-case 13:return "_"
-break;
-case 14:return "|"
-break;
-case 15:return "!"
-break;
-case 16:return "SIGN"
-break;
-case 17:yy_.yytext = "<>"; return "SIGN"
-break;
-case 18:yy_.yytext = "<>"; return "SIGN"
-break;
-case 19:yy_.yytext = "<>"; return "SIGN"
-break;
-case 20:yy_.yytext = "<>"; return "SIGN"
-break;
-case 21:yy_.yytext = "<="; return "SIGN"
-break;
-case 22:yy_.yytext = ">="; return "SIGN"
-break;
-case 23:return "sqrt"
-break;
-case 24:return "abs"
-break;
-case 25:return "ln"
-break;
-case 26:return "log"
-break;
-case 27:return "TRIG"
-break;
-case 28:return "TRIG"
-break;
-case 29:return "TRIGINV"
-break;
-case 30:return "TRIGINV"
-break;
-case 31:return "CONST"
-break;
-case 32:yy_.yytext = "pi"; return "CONST"
-break;
-case 33:return "VAR"
-break;
-case 34:yy_.yytext = "theta"; return "VAR"
-break;
-case 35:return "VAR"
-break;
-case 36:yy_.yytext = "phi"; return "VAR"
-break;
-case 37:return yy.symbolLexer(yy_.yytext)
-break;
-case 38:return "EOF"
-break;
-case 39:return "INVALID"
-break;
-case 40:console.log(yy_.yytext);
-break;
+	var YYSTATE=YY_START;
+	switch($avoiding_name_collisions) {
+	case 0:/* skip whitespace */
+	break;
+	case 1:return "INT"
+	break;
+	case 2:return "FLOAT"
+	break;
+	case 3:return "^"
+	break;
+	case 4:return "*"
+	break;
+	case 5:return "*"
+	break;
+	case 6:return "*"
+	break;
+	case 7:return "/"
+	break;
+	case 8:return "-"
+	break;
+	case 9:return "-"
+	break;
+	case 10:return "+"
+	break;
+	case 11:return "^"
+	break;
+	case 12:return "("
+	break;
+	case 13:return ")"
+	break;
+	case 14:return "_"
+	break;
+	case 15:return "|"
+	break;
+	case 16:return "!"
+	break;
+	case 17:return "SIGN"
+	break;
+	case 18:yy_.yytext = "<>"; return "SIGN"
+	break;
+	case 19:yy_.yytext = "<>"; return "SIGN"
+	break;
+	case 20:yy_.yytext = "<>"; return "SIGN"
+	break;
+	case 21:yy_.yytext = "<>"; return "SIGN"
+	break;
+	case 22:yy_.yytext = "<="; return "SIGN"
+	break;
+	case 23:yy_.yytext = ">="; return "SIGN"
+	break;
+	case 24:return "sqrt"
+	break;
+	case 25:return "abs"
+	break;
+	case 26:return "ln"
+	break;
+	case 27:return "log"
+	break;
+	case 28:return "TRIG"
+	break;
+	case 29:return "TRIG"
+	break;
+	case 30:return "TRIGINV"
+	break;
+	case 31:return "TRIGINV"
+	break;
+	case 32:return "CONST"
+	break;
+	case 33:yy_.yytext = "pi"; return "CONST"
+	break;
+	case 34:return "VAR"
+	break;
+	case 35:yy_.yytext = "theta"; return "VAR"
+	break;
+	case 36:return "VAR"
+	break;
+	case 37:yy_.yytext = "phi"; return "VAR"
+	break;
+	case 38:return yy.symbolLexer(yy_.yytext)
+	break;
+	case 39:return "EOF"
+	break;
+	case 40:return "INVALID"
+	break;
+	case 41:console.log(yy_.yytext);
+	break;
 }
 },
-rules: [/^(?:\s+)/,/^(?:[0-9]+\.?)/,/^(?:([0-9]+)?\.[0-9]+)/,/^(?:\*\*)/,/^(?:\*)/,/^(?:·)/,/^(?:×)/,/^(?:\/)/,/^(?:-)/,/^(?:\+)/,/^(?:\^)/,/^(?:\()/,/^(?:\))/,/^(?:_)/,/^(?:\|)/,/^(?:\!)/,/^(?:<=|>=|<>|<|>|=)/,/^(?:=\/=)/,/^(?:\/=)/,/^(?:\!=)/,/^(?:≠)/,/^(?:≤)/,/^(?:≥)/,/^(?:sqrt)/,/^(?:abs)/,/^(?:ln)/,/^(?:log)/,/^(?:sin|cos|tan)/,/^(?:csc|sec|cot)/,/^(?:arcsin|arccos|arctan)/,/^(?:arccsc|arcsec|arccot)/,/^(?:pi)/,/^(?:π)/,/^(?:theta)/,/^(?:θ)/,/^(?:phi)/,/^(?:φ)/,/^(?:[a-zA-Z])/,/^(?:$)/,/^(?:.)/,/^(?:.)/],
+rules: [/^(?:\s+)/,/^(?:[0-9]+\.?)/,/^(?:([0-9]+)?\.[0-9]+)/,/^(?:\*\*)/,/^(?:\*)/,/^(?:·)/,/^(?:×)/,/^(?:\/)/,/^(?:-)/,/^(?:−)/,/^(?:\+)/,/^(?:\^)/,/^(?:\()/,/^(?:\))/,/^(?:_)/,/^(?:\|)/,/^(?:\!)/,/^(?:<=|>=|<>|<|>|=)/,/^(?:=\/=)/,/^(?:\/=)/,/^(?:\!=)/,/^(?:≠)/,/^(?:≤)/,/^(?:≥)/,/^(?:sqrt)/,/^(?:abs)/,/^(?:ln)/,/^(?:log)/,/^(?:sin|cos|tan)/,/^(?:csc|sec|cot)/,/^(?:arcsin|arccos|arctan)/,/^(?:arccsc|arcsec|arccot)/,/^(?:pi)/,/^(?:π)/,/^(?:theta)/,/^(?:θ)/,/^(?:phi)/,/^(?:φ)/,/^(?:[a-zA-Z])/,/^(?:$)/,/^(?:.)/,/^(?:.)/],
 conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40],"inclusive":true}}
 };
 return lexer;
@@ -975,7 +977,7 @@ _.extend(Expr.prototype, {
         var equalNumbers = function(num1, num2) {
             return ((num1 === num2) || /* needed if either is +/- Infinity */
                     (isNaN(num1) && isNaN(num2)) ||
-                    (Math.abs(num1 - num2) < Math.pow(1, -TOLERANCE)));
+                    (Math.abs(num1 - num2) < Math.pow(10, -TOLERANCE)));
         };
 
         // if no variables, only need to evaluate once
@@ -1082,7 +1084,11 @@ _.extend(Expr.prototype, {
     // complete parse by performing a few necessary transformations
     completeParse: function() { return this.recurse("completeParse"); },
 
-    abs: abstract
+    abs: abstract,
+
+    negate: function() {
+        return new Mul(Num.Neg, this);
+    }
 });
 
 
@@ -1206,6 +1212,11 @@ _.extend(Seq.prototype, {
     // syntactic sugar for replace()
     remove: function(term) {
         return this.replace(term);
+    },
+
+    getDenominator: function() {
+        // TODO(alex): find and return LCM
+        return new Mul(_.invoke(this.terms, "getDenominator")).flatten();
     }
 });
 
@@ -1339,6 +1350,10 @@ _.extend(Add.prototype, {
     isNegative: function() {
         var terms = _.invoke(this.terms, "collect");
         return _.all(_.invoke(terms, "isNegative"));
+    },
+
+    negate: function() {
+        return new Add(_.invoke(this.terms, "negate"));
     }
 });
 
@@ -1677,10 +1692,6 @@ _.extend(Mul.prototype, {
         });
     },
 
-    getDenominator: function() {
-        return new Mul(_.invoke(this.terms, "getDenominator")).flatten();
-    },
-
     // factor a single -1 in to the Mul
     // combine with a Num if all Nums are positive, else add as a term
     factorIn: function(hint) {
@@ -1769,7 +1780,18 @@ _.extend(Mul.prototype, {
 
     fold: function() {
         return Mul.fold(this);
+    },
+
+    negate: function() {
+        var isNum = function(expr) { return expr instanceof Num; };
+        if (_.any(this.terms, isNum)) {
+            var num = _.find(this.terms, isNum);
+            return this.replace(num, num.negate());
+        } else {
+            return new Mul([Num.Neg].concat(this.terms));
+        }
     }
+
 });
 
 // static methods for the sequence types
@@ -2144,7 +2166,11 @@ _.extend(Pow.prototype, {
             // e.g. 4^1.5 -> 8
             return pow.base.raiseToThe(pow.exp);
         } else if (pow.base instanceof Trig && _.contains(recipricals, pow.base.type) && pow.exp.n < 0) {
-            return new Pow(new Trig(recipricals[pow.base.type], pow.base.arg), pow.exp.negate());
+        	if (pow.exp.n === -1) {
+                return new Trig(recipricals[pow.base.type], pow.base.arg);
+            } else {
+                return new Pow(new Trig(recipricals[pow.base.type], pow.base.arg), pow.exp.negate());
+        	}
         } else {
             return pow;
         }
@@ -2210,11 +2236,13 @@ _.extend(Pow.prototype, {
     },
 
     // extract whatever denominator makes sense, ignoring hints
+    // if negative exponent, will recursively include the base's denominator as well
     getDenominator: function() {
         if (this.exp instanceof Num && this.exp.eval() === -1) {
-            return this.base;
+        	return Mul.createOrAppend(this.base, this.base.getDenominator()).flatten();
         } else if (this.exp.isNegative()) {
-            return new Pow(this.base, Mul.handleNegative(this.exp).collect());
+            var pow = new Pow(this.base, Mul.handleNegative(this.exp).collect());
+            return Mul.createOrAppend(pow, pow.collect().getDenominator()).flatten();
         } else {
             return Num.One;
         }
@@ -2768,23 +2796,19 @@ _.extend(Eq.prototype, {
         }
 
         if (this.right instanceof Add) {
-            // invidually negate every additive term
-            // e.g. y=x+1 -> y-x-1(=0)
-            terms = terms.concat(_.map(this.right.terms, function(term) {
-                return Mul.handleNegative(term).collect();
-            }));
+        	terms = terms.concat(this.right.negate().terms);
         } else if (!isZero(this.right)) {
-            // otherwise just negate the entire side
-            // e.g. y=3x -> y-3x(=0)
-            terms.push(Mul.handleNegative(this.right).collect());
+        	terms.push(this.right.negate());
         }
+        
+        var isInequality = !this.isEquality();
 
         // then multiply through by every denominator
         for (var i = 0; i < terms.length; i++) {
             var denominator = terms[i].getDenominator();
 
             // can't multiply inequalities by non 100% positive factors
-            if (!this.isEquality() && !denominator.isPositive()) {
+            if (isInequality && !denominator.isPositive()) {
                 denominator = denominator.asPositiveFactor();
             }
 
@@ -2843,7 +2867,7 @@ _.extend(Eq.prototype, {
             return new Pow(term, Num.Div);
         });
 
-        return new Mul(terms.concat(denominator)).collect().flatten();
+        return new Mul(terms.concat(denominator)).collect();
     },
 
     isEquality: function() {

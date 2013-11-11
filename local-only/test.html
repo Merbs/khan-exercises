@@ -1078,8 +1078,8 @@
         collect("sin^--2(x)/cos^--2(x)", "tan^2(x)");
         collect("cos^--2(x)/sin^--2(x)", "cot^2(x)");
 
-        collect("sin^2(x)/cos(x)", "sin^2(x)/cos(x)");
-        collect("sin(x)/cos^2(x)", "sin(x)/cos^2(x)");
+        collect("sin^2(x)/cos(x)", "sin(x)tan(x)");
+        collect("sin(x)/cos^2(x)", "sec(x)tan(x)");
 
         collect("sin(-x)", "-sin(x)");
         collect("cos(-x)", "cos(x)");
@@ -1098,9 +1098,9 @@
     test("collect then output tex", function() {
         // user-friendly tex representation is not guaranteed after collect()
         collect("-x", "-1x");
-        collecttex("-x", "-1x");
+        collecttex("-x", "-x");
         collect("a-b", "a+-1b");
-        collecttex("a-b", "a+-1b");
+        collecttex("a-b", "a+-b");
         collect("a/b", "ab^-1");
         collecttex("a/b", "ab^{-1}");
     });
