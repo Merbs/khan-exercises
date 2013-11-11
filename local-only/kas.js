@@ -901,6 +901,8 @@ _.extend(Expr.prototype, {
         return _.uniq(_.flatten(_.invoke(this.exprArgs(), "getVars", excludeFunc))).sort();
     },
 
+    differentiate: abstract,
+    
     // check whether this expression node is of a particular type
     is: function(func) {
         return this instanceof func;
@@ -910,6 +912,15 @@ _.extend(Expr.prototype, {
     has: function(func) {
         if (this instanceof func) return true;
         return _.any(this.exprArgs(), function(arg) { return arg.has(func); });
+    },
+    
+    sameAs: abstract,
+    
+    copy: abstract,
+    
+    contains: function(elem) {
+        if (this.sameAs(elem)) return true;
+        return _.any(this.exprArgs(), function(arg) {return arg.contains(elem); });
     },
 
     // raise this expression to a given exponent
@@ -1139,6 +1150,27 @@ _.extend(Seq.prototype, {
 
     // reduce a numeric sequence to a Num
     reduce: abstract,
+    
+    sameAs: function(other) {
+        var used = []
+        return other.is(Mul) && this.terms.length === other.terms.length &&
+                       _.every(this.terms, function(a) {
+                           return _.any(other.terms, function(b, index) {
+                               if (a.sameAs(b) && !_.contains(used, index)) {
+                                   used.push(index);
+                                   return true;
+                               } else {return false;}
+                           }, used);
+                       }, used);
+    },
+    
+    copy: function() {
+    	copySeq = [];
+    	_.each(this.terms, function(term) {
+    		copySeq.push(term.copy());
+    	});
+    	return new (this.func)(copySeq);
+    },
 
     isPositive: function() {
         var terms = _.invoke(this.terms, "collect");
@@ -1284,6 +1316,24 @@ _.extend(Add.prototype, {
         return _.reduce(this.terms, function(memo, term) { return memo.add(term); }, this.identity);
     },
 
+    differentiate: function(variable) {
+        variable = variable instanceof Var ? variable : new Var(variable);
+        var derivative = [];
+        _.each(this.terms, function(term) {
+            var term = term.differentiate(variable);
+            if (!(term.sameAs(Num.Zero))) {
+                derivative.push(term);
+            }
+        }, this);
+        if (_.isEmpty(derivative)) {
+            return Num.Zero;
+        } else if (derivative.length === 1) {
+            return derivative[0];
+        } else {
+            return new Add(derivative);
+        }
+    },
+    
     needsExplicitMul: function() { return false; },
 
     isNegative: function() {
@@ -1513,8 +1563,8 @@ _.extend(Mul.prototype, {
         }));
 
         var pairs = _.groupBy(summed, function(pair) {
-        	if (pair[0] instanceof Var) {
-	        	return "vars";
+            if (pair[0] instanceof Var) {
+                return "vars";
             } else if (pair[0] instanceof Symbol) {
                 return "exps";
             } else if (pair[0] instanceof Trig && !pair[0].isInverse()) {
@@ -1533,7 +1583,7 @@ _.extend(Mul.prototype, {
         var exprs = pairs.expr || [];
         
         if(vars.length > 0){
-			vars.sort(function(var1, var2){return var1[0].symbol > var2[0].symbol});
+            vars.sort(function(var1, var2){return var1[0].symbol > var2[0].symbol});
         }
         
         if (trigs.length > 1) {
@@ -1550,20 +1600,21 @@ _.extend(Mul.prototype, {
 
                 // {Trig.type: Expr exp}
                 var funcs = {sin: Num.Zero, cos: Num.Zero, tan: Num.Zero,
-                 			 csc: Num.Zero, sec: Num.Zero, cot: Num.Zero};
-                 			 
+                             csc: Num.Zero, sec: Num.Zero, cot: Num.Zero};
+                              
                 _.each(pairs, function(pair) {
                     funcs[pair[0].type] = pair[1];
                 });
                 
                 funcs = {sin: new Int(funcs.sin.n - funcs.csc.n + funcs.tan.n - funcs.cot.n),
-                		 cos: new Int(funcs.cos.n - funcs.sec.n - funcs.tan.n + funcs.cot.n)}
-                		 
+                         cos: new Int(funcs.cos.n - funcs.sec.n - funcs.tan.n + funcs.cot.n),
+                         tan: Num.Zero, sec: Num.Zero, csc: Num.Zero, cot: Num.Zero}
+                
                 // If the sin and cos exponents have opposite signs
                 if(funcs.sin.n * funcs.cos.n < 0){
-                	// combine them into tan or cot
-                	var combos = Math.min(Math.abs(funcs.sin.n), Math.abs(funcs.cos.n));
-                	if (funcs.cos.isNegative()) {
+                    // combine them into tan or cot
+                    var combos = Math.min(Math.abs(funcs.sin.n), Math.abs(funcs.cos.n));
+                    if (funcs.cos.isNegative()) {
                         funcs.tan = new Int(combos);
                         funcs.cos.n += combos;
                         funcs.sin.n -= combos; 
@@ -1675,6 +1726,26 @@ _.extend(Mul.prototype, {
         return _.reduce(this.terms, function(memo, term) { return memo.mul(term); }, this.identity);
     },
 
+    differentiate: function(variable) {
+        variable = variable instanceof Var ? variable : new Var(variable);
+        var derivative = [];
+        _.each(this.terms, function(term, i){
+            var term = this.terms.slice(0);
+            term.splice(i, 1, term[i].differentiate(variable));
+            if(!(Num.Zero).sameAs(term[i])) {
+                derivative.push(new Mul(term));
+            }
+        }, this);
+        
+        if (_.isEmpty(derivative)) {
+            return Num.Zero;
+        } else if (derivative.length === 1){
+            return derivative[0];
+        } else {
+            return new Add(derivative);
+        }
+    },
+        
     findGCD: function(factor) {
         return new Mul(_.invoke(this.terms, "findGCD", factor)).flatten();
     },
@@ -1930,7 +2001,7 @@ _.extend(Pow.prototype, {
             // e.g sin(x) ^ 2 -> sin^2(x)
             var split = this.base.tex({split: true});
             if(this.exp.n === 1){
-            	return split[0] + split[1];
+                return split[0] + split[1];
             }
             return split[0] + "^{" + this.exp.tex() + "}" + split[1];
 
@@ -2038,6 +2109,8 @@ _.extend(Pow.prototype, {
         var isSimilarLog = function(term) {
             return term instanceof Log && term.base.equals(pow.base);
         };
+        
+        recipricals = {"cos": "sec", "sin":"csc", "tan":"cot", "sec": "cos", "csc": "sin", "cot":"tan"};
 
         if (pow.exp instanceof Num &&
             pow.exp.eval() === 0) {
@@ -2070,18 +2143,39 @@ _.extend(Pow.prototype, {
 
             // e.g. 4^1.5 -> 8
             return pow.base.raiseToThe(pow.exp);
-        } else if (pow.base instanceof Trig) {
-            if(_.contains(["cos","sin","tan"], pow.base.type) && pow.exp.n < 0){
-            	recipricals = {"cos": "sec", "sin":"csc", "tan":"cot"};
-            	pow.base.type = recipricals[pow.base.type];
-				pow.exp.n = -1 * pow.exp.n;
-			}
-            return pow;
+        } else if (pow.base instanceof Trig && _.contains(recipricals, pow.base.type) && pow.exp.n < 0) {
+            return new Pow(new Trig(recipricals[pow.base.type], pow.base.arg), pow.exp.negate());
         } else {
             return pow;
         }
     },
 
+    differentiate: function(variable) {
+        variable = variable instanceof Var ? variable : new Var(variable);
+        if (this.base.sameAs(Const.e)) {
+            return new Mul([this.exp.differentiate(variable), new Pow(this.base, this.exp)]);
+        } else if (this.base.sameAs(variable) && this.exp.is(Num)) {
+        	return new Mul([this.exp, new Pow(this.base, this.exp.decrement())]);
+        } else if (!this.base.contains(variable) && !this.exp.contains(variable)) {
+            return Num.Zero;
+        } else if (this.base.contains(variable) && this.exp.is(Num)) {
+            return new Mul([this.exp, this.base.differentiate(variable), new Pow(this.base, this.exp.decrement())]);
+        } else if (this.base.is(Num) && this.exp.contains(variable)) {
+            return new Mul([this.exp.differentiate(variable), new Pow(this.base, this.exp), new Log(Const.e, this.base)]);
+        } else{
+            throw Error("The derivative of the expression " + this.print() +
+                    "isn't supported yet.");
+        }
+    },
+    
+    sameAs: function(other) {
+        return other.is(Pow) && this.base === other.base && this.exp === other.exp
+    },
+    
+    copy: function() {
+    	return new Pow(this.base, this.power);
+    },
+    
     // checks whether this Pow represents user-entered division
     isDivide: function() {
         var isDiv = function(arg) { return arg instanceof Num && arg.hints.divide; };
@@ -2282,6 +2376,24 @@ _.extend(Log.prototype, {
         }
     },
 
+    differentiate: function(variable) {
+        variable = variable instanceof Var ? variable : new Var(variable);
+        if(this.isNatural) {
+            return Mul.handleDivide((this.power).differentiate(variable), this.power.copy());
+        } else {
+            throw Error("Haven't handled the case for non-base-e logs")
+        }
+        
+    },
+    
+    sameAs: function(other) {
+        return other.is(Log) && this.base === other.base && this.power === other.power;
+    },
+    
+    copy: function(other) {
+    	return new Log(this.base, this.power);
+    },
+    
     hints: _.extend(Log.prototype.hints, {
         open: false
     }),
@@ -2443,6 +2555,23 @@ _.extend(Trig.prototype, {
 
     // TODO(alex): does every new node type need to redefine these?
     needsExplicitMul: function() { return false; },
+    
+    differentiate: function(variable) {
+        variable = variable instanceof Var ? variable : new Var(variable);
+        switch(this.type) {
+            case "sin": return new Mul([this.arg.differentiate(variable), new Trig("cos", this.arg)]);
+            case "cos": return new Mul([this.arg.differentiate(variable), Num.negativeOne(), new Trig("sin", this.arg)]);
+            case "tan": return new Mul([this.arg.differentiate(variable), new Pow(new Trig("sec", this.arg), Num.Two)]);
+            case "csc": return new Mul([this.arg.differentiate(variable), Num.negativeOne(), new Trig("csc", this.arg), new Trig("cot", this.arg)]);
+            case "sec": return new Mul([this.arg.differentiate(variable), new Trig("sec", this.arg), new Trig("tan", this.arg)]);
+            case "cot": return new Mul([this.arg.differentiate(variable), Num.negativeOne(), new Pow(new Trig("csc", this.arg), Num.Two)]);
+            default: throw Error("The derivative of the Trig function '" + this.type + "' is not supported yet.");
+        }
+    },
+    
+    sameAs: function(other) {
+        return other.is(Trig) && this.type === other.type && this.arg === other.arg;
+    },
 
     expand: function() {
         var trig = this.recurse("expand");
@@ -2854,6 +2983,23 @@ _.extend(Var.prototype, {
         return vars[this.print()];
     },
 
+    differentiate: function(variable) {
+        variable = variable instanceof Var ? variable : new Var(variable);
+        if (this.sameAs(variable)) {
+            return Num.One;
+        } else {
+            return Num.Zero;
+        }
+    },
+    
+    sameAs: function(other) {
+        return other.is(Var) && this.symbol === other.symbol && this.subscript === other.subscript;
+    },
+    
+    copy: function() {
+    	return new Var(this.symbol, this.subscript);
+    },
+    
     getVars: function() { return [this.symbol]; },
 
     isPositive: function() { return false; }
@@ -2891,6 +3037,10 @@ _.extend(Const.prototype, {
         return this.eval() > 0;
     },
 
+    sameAs: function(other) {
+        return other.is(Const) && this.symbol === other.symbol; 
+    },
+    
     abs: function() {
         if (this.eval() > 0) {
             return this;
@@ -2925,6 +3075,10 @@ _.extend(Num.prototype, {
     // return the absolute value of the number
     abs: abstract,
 
+    differentiate: function(variable) {
+        return Num.Zero;
+    },
+    
     needsExplicitMul: function() { return true; },
 
     findGCD: function(factor) {
@@ -2957,7 +3111,13 @@ _.extend(Num.prototype, {
         entered: false
     }),
 
-    // wheter a number is considered simple (one term)
+    // subtract one
+    decrement: abstract,
+    
+    // checks for equality
+    sameAs: abstract,
+   
+    // whether a number is considered simple (one term)
     // e.g. for reals, ints and floats are simple
     isSimple: abstract
 });
@@ -3045,6 +3205,18 @@ _.extend(Rational.prototype, {
         return new Int(this.d);
     },
 
+    decrement: function() {
+        return new Rational(this.n - this.d, this.d);
+    },
+    
+    sameAs: function (other) {
+        return other.is(Rational) && this.n === other.n && this.d === other.d;
+    },
+    
+    copy: function () {
+    	return new Rational(this.n, this.d);
+    },
+    	
     isSimple: function() { return false; }
 });
 
@@ -3060,6 +3232,9 @@ _.extend(Int.prototype, {
     tex: function() { return this.n.toString(); },
     negate: function() { return new Int(-this.n); },
     abs: function() { return new Int(Math.abs(this.n)); },
+    decrement: function() { return new Int(this.n - 1); },
+    sameAs: function(other) { return other.is(Int) && this.n === other.n},
+    copy: function() { return new Int(this.n); },
     isSimple: function() { return true; }
 });
 
@@ -3118,6 +3293,18 @@ _.extend(Float.prototype, {
         return this.asRational().getDenominator();
     },
 
+    decrement: function() {
+        return new Float(this.n - 1);
+    },
+    
+    sameAs: function(other) {
+        return other.is(Float) && this.n === other.n;
+    },
+    
+    copy: function() {
+    	return new Float(this.n);
+    },
+    
     isSimple: function() { return true; }
 });
 
@@ -3174,6 +3361,7 @@ Num.Sqrt = new Rational(1, 2).addHint("root");
 
 Num.Zero = new Int(0);
 Num.One = new Int(1);
+Num.Two = new Int(2);
 Num.Ten = new Int(10);
 
 
