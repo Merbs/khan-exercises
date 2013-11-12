@@ -937,12 +937,12 @@ _.extend(Expr.prototype, {
     // expand and collect until the expression no longer changes
     simplify: function(options) {
         defaults = {
-            expandAbs: true,
-            expandLogs: true,
+            expandAbs: false,
+            expandLogs: false,
             expandPow: {
                 baseMul: true,
             	baseAdd: true,
-            	expAdd: true
+            	expAdd: false
             },
         };
         options = _.extend(defaults, options);
@@ -2183,7 +2183,7 @@ _.extend(Pow.prototype, {
             var mul = new Mul(_.pick(cache, indices)).expand(options).collect();
             return signed(mul);
 
-        } else if (pow.exp instanceof Add && options.expandPow.expAdd) { // DEFINITELY want behind super-simplify() flag
+        } else if (pow.exp instanceof Add && options.expandPow.expAdd) {
             // e.g. x^(a+b) -> x^a*x^b
 
             var terms = _.map(pow.exp.terms, function(term) {
@@ -2474,7 +2474,7 @@ _.extend(Log.prototype, {
     expand: function(options) {
         var log = this.recurse("expand", options);
 
-        if (log.power instanceof Mul && options.expandLogs) { // might want behind super-simplify() flag
+        if (log.power instanceof Mul && options.expandLogs) {
             // e.g. ln(xy) -> ln(x) + ln(y)
 
             var terms = _.map(log.power.terms, function(term) {
@@ -2808,7 +2808,6 @@ _.extend(Abs.prototype, {
         }
     },
 
-    // this should definitely be behind a super-simplify flag
     expand: function(options) {
         var abs = this.recurse("expand", options);
 
