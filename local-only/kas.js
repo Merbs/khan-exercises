@@ -983,6 +983,28 @@ _.extend(Expr.prototype, {
         return _.any(this.exprArgs(), function(arg) {return arg.contains(elem); });
     },
 
+    allAddTermsWith: function(arg) {
+    	if (this.contains(arg)) {
+    		if(this.is(Add)) {
+        		return new Add(_.map(this.terms, function(term) {
+        			return term.allAddTermsWith(arg);
+        		}));
+        	} else {
+        		return this;
+        	}
+    	} else {
+    		return Num.Zero;
+    	}   	
+    },
+    
+    allAddTermsWithX: function() {
+    	return this.allAddTermsWith(new Var("x")).simplify();
+    },
+    
+    allAddTermsWithY: function() {
+    	return this.allAddTermsWith(new Var("y")).simplify();
+    },
+
     // raise this expression to a given exponent
     // most useful for eventually implementing i^3 = -i, etc.
     raiseToThe: function(exp) {
