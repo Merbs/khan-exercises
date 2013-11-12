@@ -938,11 +938,11 @@ _.extend(Expr.prototype, {
     simplify: function(options) {
         defaults = {
             expandAbs: false,
-            expandLogs: false,
+            expandLog: false,
             expandPow: {
                 baseMul: true,
-            	baseAdd: true,
-            	expAdd: false
+                baseAdd: true,
+                expAdd: false
             },
         };
         options = _.extend(defaults, options);
@@ -956,8 +956,8 @@ _.extend(Expr.prototype, {
     },
 
     // check whether this expression is simplified
-    isSimplified: function() {
-        return this.equals(this.simplify());
+    isSimplified: function(options) {
+        return this.equals(this.simplify(options));
     },
 
     // return the child nodes of this node
@@ -1418,15 +1418,17 @@ _.extend(Add.prototype, {
         return _.reduce(this.terms, function(memo, term) { return memo.add(term); }, this.identity);
     },
 
-    differentiate: function(variable) {
+    differentiate: function(variable) {    	
         variable = variable instanceof Var ? variable : new Var(variable);
+        
         var derivative = [];
         _.each(this.terms, function(term) {
-            var term = term.differentiate(variable);
+            var term = term.differentiate(variable).simplify();
             if (!(term.sameAs(Num.Zero))) {
                 derivative.push(term);
             }
         }, this);
+                
         if (_.isEmpty(derivative)) {
             return Num.Zero;
         } else if (derivative.length === 1) {
@@ -1833,7 +1835,7 @@ _.extend(Mul.prototype, {
         var derivative = [];
         _.each(this.terms, function(term, i){
             var term = this.terms.slice(0);
-            term.splice(i, 1, term[i].differentiate(variable));
+            term[i] = term[i].differentiate(variable).simplify();
             if(!(Num.Zero).sameAs(term[i])) {
                 derivative.push(new Mul(term));
             }
@@ -2141,8 +2143,6 @@ _.extend(Pow.prototype, {
     expand: function(options) {
         var pow = this.recurse("expand", options);
         
-        console.log(options, options.expandPow.baseMul);
-
         if (pow.base instanceof Mul && options.expandPow.baseMul) {
             // e.g. (ab)^c -> a^c*b^c
 
@@ -2474,7 +2474,7 @@ _.extend(Log.prototype, {
     expand: function(options) {
         var log = this.recurse("expand", options);
 
-        if (log.power instanceof Mul && options.expandLogs) {
+        if (log.power instanceof Mul && options.expandLog) {
             // e.g. ln(xy) -> ln(x) + ln(y)
 
             var terms = _.map(log.power.terms, function(term) {
