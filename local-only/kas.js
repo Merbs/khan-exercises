@@ -921,10 +921,10 @@ _.extend(Expr.prototype, {
     normalize: function() { return this.recurse("normalize"); },
 
     // expands the expression
-    expand: function() { return this.recurse("expand"); },
+    expand: function(options) { return this.recurse("expand", options); },
 
     // naively factors out like terms
-    factor: function() { return this.recurse("factor"); },
+    factor: function(options) { return this.recurse("factor", options); },
 
     // collect all like terms
     collect: function() { return this.recurse("collect"); },
@@ -935,8 +935,19 @@ _.extend(Expr.prototype, {
     },
 
     // expand and collect until the expression no longer changes
-    simplify: function() {
-        var simplified = this.factor().collect().expand().collect();
+    simplify: function(options) {
+        defaults = {
+            expandAbs: true,
+            expandLogs: true,
+            expandPow: {
+                baseMul: true,
+            	baseAdd: true,
+            	expAdd: true
+            },
+        };
+        options = _.extend(defaults, options);
+        
+        var simplified = this.factor(options).collect().expand(options).collect();
         if (this.equals(simplified)) {
             return simplified;
         } else {
@@ -1187,12 +1198,12 @@ _.extend(Seq.prototype, {
         return new this.func(terms);
     },
 
-    expand: function() {
-        return this.recurse("expand").flatten();
+    expand: function(options) {
+        return this.recurse("expand", options).flatten();
     },
 
-    factor: function() {
-        return this.recurse("factor").flatten();
+    factor: function(options) {
+        return this.recurse("factor", options).flatten();
     },
 
     // partition the sequence into its numeric and non-numeric parts
@@ -1548,7 +1559,7 @@ _.extend(Mul.prototype, {
     },
 
     // expand numerator and denominator separately
-    expand: function() {
+    expand: function(options) {
 
         var isAdd = function(term) {
             return term instanceof Add;
@@ -1562,7 +1573,7 @@ _.extend(Mul.prototype, {
             return isInverse(term) && isAdd(term.base);
         };
 
-        var mul = this.recurse("expand").flatten();
+        var mul = this.recurse("expand", options).flatten();
 
         var hasAdd = _.any(mul.terms, isAdd);
         var hasInverseAdd = _.any(mul.terms, isInverseAdd);
@@ -1599,7 +1610,7 @@ _.extend(Mul.prototype, {
 
         if (hasInverseAdd) {
             var denominator = new Mul(_.invoke(inverses, "getDenominator")).flatten();
-            inverses = [new Pow(denominator.expand(), Num.Div)];
+            inverses = [new Pow(denominator.expand(options), Num.Div)];
         }
 
         return new Mul(normals.concat(inverses)).flatten();
@@ -2127,19 +2138,21 @@ _.extend(Pow.prototype, {
         return this.isRoot() ? false : this.base.needsExplicitMul();
     },
 
-    expand: function() {
-        var pow = this.recurse("expand");
+    expand: function(options) {
+        var pow = this.recurse("expand", options);
+        
+        console.log(options, options.expandPow.baseMul);
 
-        if (pow.base instanceof Mul) {
+        if (pow.base instanceof Mul && options.expandPow.baseMul) {
             // e.g. (ab)^c -> a^c*b^c
 
             var terms = _.map(pow.base.terms, function(term) {
                 return new Pow(term, pow.exp);
             });
 
-            return new Mul(terms).expand();
+            return new Mul(terms).expand(options);
 
-        } else if (pow.base instanceof Add && pow.exp instanceof Int && pow.exp.abs().eval() > 1) {
+        } else if (pow.base instanceof Add && pow.exp instanceof Int && pow.exp.abs().eval() > 1 && options.expandPow.baseAdd) {
             // e.g. (a+b)^2 -> a*a+a*b+a*b+b*b
             // e.g. (a+b)^-2 -> (a*a+a*b+a*b+b*b)^-1
 
@@ -2154,7 +2167,7 @@ _.extend(Pow.prototype, {
             var cache = { 1: pow.base };
             for (var i = 2; i <= n; i *= 2) {
                 var mul = new Mul(cache[i / 2], cache[i / 2]);
-                cache[i] = mul.expand().collect();
+                cache[i] = mul.expand(options).collect();
             }
 
             // if n is a power of 2, you're done!
@@ -2167,25 +2180,25 @@ _.extend(Pow.prototype, {
             indices = _.without(indices, 0);
 
             // ... then combine
-            var mul = new Mul(_.pick(cache, indices)).expand().collect();
+            var mul = new Mul(_.pick(cache, indices)).expand(options).collect();
             return signed(mul);
 
-        } else if (pow.exp instanceof Add) { // DEFINITELY want behind super-simplify() flag
+        } else if (pow.exp instanceof Add && options.expandPow.expAdd) { // DEFINITELY want behind super-simplify() flag
             // e.g. x^(a+b) -> x^a*x^b
 
             var terms = _.map(pow.exp.terms, function(term) {
-                return new Pow(pow.base, term).expand();
+                return new Pow(pow.base, term).expand(options);
             });
 
-            return new Mul(terms).expand();
+            return new Mul(terms).expand(options);
         } else {
             return pow;
         }
     },
 
-    factor: function() {
-        var pow = this.recurse("factor");
-        if (pow.base instanceof Mul) {
+    factor: function(options) {
+        var pow = this.recurse("factor", options);
+        if (pow.base instanceof Mul && options.expandPow.baseMul) {
             var terms = _.map(pow.base.terms, function(term) {
                 return new Pow(term, pow.exp);
             });
@@ -2458,15 +2471,15 @@ _.extend(Log.prototype, {
         }
     },
 
-    expand: function() {
-        var log = this.recurse("expand");
+    expand: function(options) {
+        var log = this.recurse("expand", options);
 
-        if (log.power instanceof Mul) {  // might want behind super-simplify() flag
+        if (log.power instanceof Mul && options.expandLogs) { // might want behind super-simplify() flag
             // e.g. ln(xy) -> ln(x) + ln(y)
 
             var terms = _.map(log.power.terms, function(term) {
                 // need to expand again in case new log powers are Pows
-                return new Log(log.base, term).expand();
+                return new Log(log.base, term).expand(options);
             });
 
             return new Add(terms);
@@ -2474,7 +2487,7 @@ _.extend(Log.prototype, {
         } else if (log.power instanceof Pow) {
             // e.g. ln(x^y) -> y*ln(x)
 
-            return new Mul(log.power.exp, new Log(log.base, log.power.base).expand()).flatten();
+            return new Mul(log.power.exp, new Log(log.base, log.power.base).expand(options)).flatten();
         } else if (!log.isNatural()) {
             // e.g. log_b(x) -> ln(x)/ln(b)
 
@@ -2548,38 +2561,38 @@ _.extend(Trig.prototype, {
         sin: {
             eval: Math.sin,
             tex: "\\sin",
-            expand: function() { return this; }
+            expand: function(options) { return this; }
         },
         cos: {
             eval: Math.cos,
             tex: "\\cos",
-            expand: function() { return this; }
+            expand: function(options) { return this; }
         },
         tan: {
             eval: Math.tan,
             tex: "\\tan",
-            expand: function() {
+            expand: function(options) {
                 return Mul.handleDivide(Trig.sin(this.arg), Trig.cos(this.arg));
             }
         },
         csc: {
             eval: function(arg) { 1 / Math.sin(arg); },
             tex: "\\csc",
-            expand: function() {
+            expand: function(options) {
                 return Mul.handleDivide(Num.One, Trig.sin(this.arg));
             }
         },
         sec: {
             eval: function(arg) { 1 / Math.cos(arg); },
             tex: "\\sec",
-            expand: function() {
+            expand: function(options) {
                 return Mul.handleDivide(Num.One, Trig.cos(this.arg));
             }
         },
         cot: {
             eval: function(arg) { 1 / Math.tan(arg); },
             tex: "\\cot",
-            expand: function() {
+            expand: function(options) {
                 return Mul.handleDivide(Trig.cos(this.arg), Trig.sin(this.arg));
             }
         },
@@ -2681,8 +2694,8 @@ _.extend(Trig.prototype, {
         return other.is(Trig) && this.type === other.type && this.arg === other.arg;
     },
 
-    expand: function() {
-        var trig = this.recurse("expand");
+    expand: function(options) {
+        var trig = this.recurse("expand", options);
         if (!trig.isInverse()) {
             // e.g. tan(x) -> sin(x)/cos(x)
             var expand = trig.functions[trig.type].expand;
@@ -2796,10 +2809,10 @@ _.extend(Abs.prototype, {
     },
 
     // this should definitely be behind a super-simplify flag
-    expand: function() {
-        var abs = this.recurse("expand");
+    expand: function(options) {
+        var abs = this.recurse("expand", options);
 
-        if (abs.arg instanceof Mul) {
+        if (abs.arg instanceof Mul && options.expandAbs) {
             // e.g. |xyz| -> |x|*|y|*|z|
             var terms = _.map(abs.arg.terms, function(term) {
                 return new Abs(term);
