@@ -2236,12 +2236,12 @@ _.extend(Pow.prototype, {
 
     differentiate: function(variable) {
         variable = variable instanceof Var ? variable : new Var(variable);
-        if (this.base.sameAs(Const.e)) {
+        if (!this.base.contains(variable) && !this.exp.contains(variable)) {
+            return Num.Zero;
+        } else if (this.base.sameAs(Const.e)) {
             return new Mul([this.exp.differentiate(variable), new Pow(this.base, this.exp)]);
         } else if (this.base.sameAs(variable) && this.exp.is(Num)) {
         	return new Mul([this.exp, new Pow(this.base, this.exp.decrement())]);
-        } else if (!this.base.contains(variable) && !this.exp.contains(variable)) {
-            return Num.Zero;
         } else if (this.base.contains(variable) && this.exp.is(Num)) {
             return new Mul([this.exp, this.base.differentiate(variable), new Pow(this.base, this.exp.decrement())]);
         } else if (this.base.is(Num) && this.exp.contains(variable)) {
