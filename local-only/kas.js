@@ -1008,12 +1008,30 @@ _.extend(Expr.prototype, {
     	}   	
     },
     
+    allAddTermsWithout: function(arg) {
+    	if(this.is(Add)) {
+       		return new Add(_.map(this.terms, function(term) {
+       			return term.allAddTermsWithout(arg);
+       		}));
+       	} else {
+       		return this.contains(arg) ? Num.Zero : this;
+       	}
+    },
+    
     allAddTermsWithX: function(options) {
     	return this.allAddTermsWith(new Var("x")).simplify(options);
     },
     
     allAddTermsWithY: function(options) {
     	return this.allAddTermsWith(new Var("y")).simplify(options);
+    },
+    
+    allAddTermsWithoutX: function(options) {
+    	return this.allAddTermsWithout(new Var("x")).simplify(options);
+    },
+    
+    allAddTermsWithoutY: function(options) {
+    	return this.allAddTermsWithout(new Var("y")).simplify(options);
     },
 
     // raise this expression to a given exponent
