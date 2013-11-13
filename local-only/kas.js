@@ -1406,6 +1406,10 @@ _.extend(Add.prototype, {
             factors.push(Num.Neg);
         }
 
+        if (factors.length === 1 && factors[0].sameAs(Num.Zero)) {
+        	factors = [Num.One];
+        }
+
         factors = new Mul(factors).flatten().collect();
 
         var remainder = _.map(terms, function(term) {
